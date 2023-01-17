@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { vkDto } from './user.controller';
+import { sign } from 'jsonwebtoken';
 
 @Injectable()
 export class UserService {
@@ -11,10 +12,11 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async getUserInfo({ userId, accessToken }: vkDto) {
-    const url = `https://api.vk.com/method/users.get?user_ids=${userId}&fields=photo_200,bdate,sex&access_token=${accessToken}&v=5.190`;
+  async createUser({ userId, accessToken }: vkDto) {
+    const url = `https://api.vk.com/method/users.get?user_ids=${userId}&access_token=${accessToken}&v=5.190`;
     const response = await fetch(url);
     const userInfo = await response.json();
-    return userInfo.response[0];
+    const jwt = sign(userInfo.response[0].id, process.env.JWT_SECRET);
+    return { token: jwt };
   }
 }

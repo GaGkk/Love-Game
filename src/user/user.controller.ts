@@ -6,12 +6,12 @@ export interface vkDto {
   accessToken: string;
 }
 
-@Controller()
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/getUser')
+  @Post('/login')
   async authorize(@Body() { userId, accessToken }: vkDto) {
-    return this.userService.getUserInfo({ userId, accessToken });
+    return this.userService.createUser({ userId, accessToken });
   }
 }

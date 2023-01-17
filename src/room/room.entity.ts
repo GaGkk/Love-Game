@@ -1,16 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Message } from '../message/message.entity';
 import { User } from '../user/user.entity';
 
 @Entity()
@@ -18,25 +7,9 @@ export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  title: string;
+  @Column('jsonb', { array: true })
+  messages: object[];
 
-  @Column()
-  description: string;
-
-  @OneToMany(() => Message, (message) => message.room)
-  messages: Message[];
-
-  @ManyToOne(() => User, (user) => user.rooms)
-  owner: User;
-
-  @ManyToMany(() => User, (user) => user.joinedRooms)
-  @JoinTable()
+  @OneToMany(() => User, (user) => user.activeRoom)
   members: User[];
-
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
 }

@@ -1,12 +1,5 @@
-import {
-  Column,
-  Entity,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Message } from '../message/message.entity';
 import { Room } from '../room/room.entity';
 
 @Entity('User')
@@ -14,15 +7,12 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @OneToMany(() => Message, (message) => message.owner)
-  messages: Message[];
+  @Column({ nullable: true })
+  avatar: string;
 
-  @OneToMany(() => Room, (room) => room.owner)
-  rooms: Room[];
-
-  @ManyToMany(() => Room, (room) => room.members)
-  joinedRooms: Room[];
+  @ManyToOne(() => Room, (room) => room.members)
+  activeRoom: Room;
 }
