@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { ConfigModule } from '@nestjs/config';
+import { RoomModule } from './room/room.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ConfigModule } from '@nestjs/config';
     TypeOrmModule.forRoot(db.options),
     UserModule,
     ChatModule,
+    RoomModule,
   ],
   controllers: [],
   providers: [ChatGateway],

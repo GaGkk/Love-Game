@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { vkDto } from './user.controller';
 import { sign } from 'jsonwebtoken';
+import { UserDto } from './createUser.dto';
 
 @Injectable()
 export class UserService {
@@ -12,11 +12,25 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async createUser({ userId, accessToken }: vkDto) {
-    const url = `https://api.vk.com/method/users.get?user_ids=${userId}&access_token=${accessToken}&v=5.190`;
-    const response = await fetch(url);
-    const userInfo = await response.json();
-    const jwt = sign(userInfo.response[0].id, process.env.JWT_SECRET);
-    return { token: jwt };
+  async getUser(userDto: UserDto) {
+    const user = await this.userRepository.findOne({
+      where: { socialId: userDto.socialId },
+    });
+    const jwt = sign(userDto.socialId, process.env.JWT_SECRET);
+    if (!user) {
+      const newProfile = this.userRepository.create(userDto);
+      const profile = await this.userRepository.save(newProfile);
+      return { accessToken: jwt, profile };
+    }
+    return { token: jwt, user };
+  }
+
+  async updateUser(userDto: UserDto, id: number) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (user) {
+      Object.assign(user, userDto);
+      return this.userRepository.save(user);
+    }
+    throw new NotFoundException('User not Found');
   }
 }

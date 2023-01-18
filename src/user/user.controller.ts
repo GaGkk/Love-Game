@@ -1,17 +1,18 @@
-import { Controller, Body, Post } from '@nestjs/common';
+import { Controller, Body, Post, Param } from '@nestjs/common';
+import { UserDto } from './createUser.dto';
 import { UserService } from './user.service';
-
-export interface vkDto {
-  userId: number;
-  accessToken: string;
-}
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/login')
-  async authorize(@Body() { userId, accessToken }: vkDto) {
-    return this.userService.createUser({ userId, accessToken });
+  @Post('/getUser')
+  async get(@Body() userDto: UserDto) {
+    return this.userService.getUser(userDto);
+  }
+
+  @Post('/:id')
+  async update(@Body() userDto: UserDto, @Param('id') id: number) {
+    return this.userService.updateUser(userDto, id);
   }
 }

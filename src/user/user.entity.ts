@@ -1,6 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-
-import { Room } from '../room/room.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('User')
 export class User {
@@ -8,11 +6,23 @@ export class User {
   id: number;
 
   @Column({ nullable: true })
-  name: string;
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
 
   @Column({ nullable: true })
   avatar: string;
 
-  @ManyToOne(() => Room, (room) => room.members)
-  activeRoom: Room;
+  @Column({ nullable: true })
+  age: number;
+
+  @Column('simple-json', { nullable: true })
+  address: {
+    country: string;
+    city: string;
+  };
+
+  @Column()
+  socialId: string;
 }

@@ -1,15 +1,13 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-
-import { User } from '../user/user.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('jsonb', { array: true })
+  @Column('jsonb', { nullable: true })
   messages: object[];
 
-  @OneToMany(() => User, (user) => user.activeRoom)
-  members: User[];
+  @Column('jsonb', { nullable: true })
+  members: object[];
 }
