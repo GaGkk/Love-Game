@@ -17,6 +17,9 @@ export class User {
   @Column({ nullable: true })
   age: number;
 
+  @Column({ nullable: true })
+  sex: number;
+
   @Column('simple-json', { nullable: true })
   address: {
     country: string;
@@ -25,4 +28,7 @@ export class User {
 
   @Column()
   socialId: string;
+
+  @Column({ nullable: true })
+  activeRoomId: number;
 }

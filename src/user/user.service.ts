@@ -19,8 +19,8 @@ export class UserService {
     const jwt = sign(userDto.socialId, process.env.JWT_SECRET);
     if (!user) {
       const newProfile = this.userRepository.create(userDto);
-      const profile = await this.userRepository.save(newProfile);
-      return { accessToken: jwt, profile };
+      const user = await this.userRepository.save(newProfile);
+      return { accessToken: jwt, user };
     }
     return { token: jwt, user };
   }
@@ -32,5 +32,9 @@ export class UserService {
       return this.userRepository.save(user);
     }
     throw new NotFoundException('User not Found');
+  }
+
+  async getUserbyId(id) {
+    return this.userRepository.findOneBy(id);
   }
 }

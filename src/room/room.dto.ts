@@ -7,6 +7,6 @@ export class RoomDto {
 
   members: {
     userId: number;
-    // status: string;
+    side: string;
   };
 }

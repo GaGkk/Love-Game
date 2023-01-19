@@ -6,18 +6,30 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { verify } from 'jsonwebtoken';
+import { JwtPayloadInterface } from 'src/interface/jwtPayload.interface';
+import { UnauthorizedException } from '@nestjs/common';
+import { RoomService } from './room.service';
+import { UserService } from 'src/user/user.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor() {}
-  handleConnection(client: Socket) {
+export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(
+    private readonly userService: UserService,
+    private readonly roomService: RoomService,
+  ) {}
+  async handleConnection(client: Socket) {
     const token = client.handshake.auth.token;
-    const payload = verify(token, process.env.JWT_SECRET);
-    if (!payload) {
+    const { id } = verify(token, process.env.JWT_SECRET) as JwtPayloadInterface;
+    const user = await this.userService.getUserbyId(id);
+    if (!user) {
       client.disconnect(true);
-    } else {
-      console.log(`Client ${client.id} connected.`);
+      throw new UnauthorizedException('User not Found');
     }
+    const rooms = await this.roomService.getRooms();
+    if (rooms.length == 0) {
+      return await this.roomService.createRoom(user.id, user.sex);
+    }
+    console.log(`User ${user.firstName} connected.`);
   }
 
   @SubscribeMessage('join')
