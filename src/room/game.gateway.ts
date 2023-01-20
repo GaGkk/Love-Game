@@ -19,17 +19,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
   async handleConnection(client: Socket) {
     const token = client.handshake.auth.token;
+    if (!token) {
+      client.disconnect(true);
+      throw new UnauthorizedException('User not Found');
+    }
     const { id } = verify(token, process.env.JWT_SECRET) as JwtPayloadInterface;
     const user = await this.userService.getUserbyId(id);
     if (!user) {
       client.disconnect(true);
       throw new UnauthorizedException('User not Found');
     }
-    const rooms = await this.roomService.getRooms();
-    if (rooms.length == 0) {
-      return await this.roomService.createRoom(user.id, user.sex);
-    }
-    console.log(`User ${user.firstName} connected.`);
+    const roomDto = { userId: user.id, gender: user.sex };
+    const room = await this.roomService.createRoom(roomDto);
+    client.join(room.id.toString());
+    console.log(`User ${user.firstName} joined to room ${room.id}`);
   }
 
   @SubscribeMessage('join')

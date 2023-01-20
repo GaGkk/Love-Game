@@ -6,8 +6,15 @@ export class Room {
   id: number;
 
   @Column('jsonb', { nullable: true })
-  messages: object[];
+  messages: {
+    from: number;
+    message: string;
+    createdAt: Date;
+  }[];
 
   @Column('jsonb', { nullable: true })
-  members: object[];
+  members: {
+    side: string;
+    userId: number;
+  }[];
 }

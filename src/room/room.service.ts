@@ -9,25 +9,19 @@ export class RoomService {
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
   ) {}
 
-  async createRoom(userId: number, gender: number) {
+  async createRoom(roomDto: { userId: number; gender: number }) {
     const room = new Room();
-    if (gender == 1) {
-      room.members.push({ userId, side: 'top' });
+    room.members = [];
+    room.messages = [];
+    if (roomDto.gender == 1) {
+      room.members.push({ userId: roomDto.userId, side: 'top' });
+    } else {
+      room.members.push({ userId: roomDto.userId, side: 'bottom' });
     }
-    room.members.push({ userId, side: 'bottom' });
-
-    // const message = {
-    //   ...roomDto,
-    //   createdAt: new Date(),
-    // };
-
     return this.roomRepository.save(room);
   }
 
   async getRooms() {
-    const rooms = await this.roomRepository.find();
-    const memb = rooms.map((e) => e.members);
-    console.log(rooms);
     return await this.roomRepository.find();
   }
 }

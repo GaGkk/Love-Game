@@ -20,7 +20,7 @@ export class UserService {
     if (!user) {
       const newProfile = this.userRepository.create(userDto);
       const user = await this.userRepository.save(newProfile);
-      return { accessToken: jwt, user };
+      return { token: jwt, user };
     }
     return { token: jwt, user };
   }
@@ -34,7 +34,7 @@ export class UserService {
     throw new NotFoundException('User not Found');
   }
 
-  async getUserbyId(id) {
-    return this.userRepository.findOneBy(id);
+  async getUserbyId(id: number) {
+    return this.userRepository.findOneBy({ id });
   }
 }

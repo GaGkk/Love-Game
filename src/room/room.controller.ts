@@ -7,7 +7,11 @@ export class RoomController {
 
   @Get()
   async getAll() {
-    const rooms = await this.roomService.getRooms();
-    console.log(rooms.length);
+    return await this.roomService.getRooms();
+  }
+
+  @Post()
+  async createRoom(@Body() roomDto: { userId: number; gender: number }) {
+    return await this.roomService.createRoom(roomDto);
   }
 }
