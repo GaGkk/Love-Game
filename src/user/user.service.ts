@@ -34,7 +34,7 @@ export class UserService {
     throw new NotFoundException('User not Found');
   }
 
-  async getUserbyId(id: number) {
-    return this.userRepository.findOneBy({ id });
+  async getUserbyId(socialId: string) {
+    return this.userRepository.findOneBy({ socialId });
   }
 }

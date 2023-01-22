@@ -1,45 +1,41 @@
 import {
+  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { verify } from 'jsonwebtoken';
-import { JwtPayloadInterface } from 'src/interface/jwtPayload.interface';
-import { UnauthorizedException } from '@nestjs/common';
 import { RoomService } from './room.service';
-import { UserService } from 'src/user/user.service';
+import { WsGuard } from 'src/user/ws.guard';
+import { UseGuards } from '@nestjs/common';
+import { User } from 'src/user/user.entity';
+import { currentUser } from 'src/user/user.decorator';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(
-    private readonly userService: UserService,
-    private readonly roomService: RoomService,
-  ) {}
-  async handleConnection(client: Socket) {
-    const token = client.handshake.auth.token;
-    if (!token) {
-      client.disconnect(true);
-      throw new UnauthorizedException('User not Found');
-    }
-    const { id } = verify(token, process.env.JWT_SECRET) as JwtPayloadInterface;
-    const user = await this.userService.getUserbyId(id);
-    if (!user) {
-      client.disconnect(true);
-      throw new UnauthorizedException('User not Found');
-    }
-    const roomDto = { userId: user.id, gender: user.sex };
-    const room = await this.roomService.createRoom(roomDto);
-    client.join(room.id.toString());
-    console.log(`User ${user.firstName} joined to room ${room.id}`);
+  constructor(private readonly roomService: RoomService) {}
+
+  handleConnection(client: Socket) {
+    console.log(`Client ${client.id} connected`);
   }
 
+  handleDisconnect(client: Socket) {
+    console.log(`Client ${client.id} disconnected`);
+  }
+
+  @UseGuards(WsGuard)
   @SubscribeMessage('join')
-  handleJoin(client: Socket, roomId: number) {
-    console.log(`Client ${client.id} joined room: ${roomId}`);
-    client.join(roomId.toString());
-    return roomId;
+  async handleJoin(
+    @currentUser() user: User,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const room = await this.roomService.createRoom({
+      userId: user.id,
+      gender: user.sex,
+    });
+    console.log(`${user.firstName} joined to room: ${room.id}`);
+    client.join(room.id.toString());
   }
 
   @SubscribeMessage('leave')
@@ -50,16 +46,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('message')
-  async handleMessage(client: Socket, message: string, roomId: number) {
+  async handleMessage(client: Socket, content: string, roomId: number) {
     console.log(
-      `Client ${client.id} sended message: ${message} to room: ${roomId}`,
+      `Client ${client.id} sended message: ${content} to room: ${roomId}`,
     );
-    // const message = await this.messageService.createMessage(payload);
-    // client.emit('message', message);
-    // client.to(message.room.toString()).emit('message', message);
-  }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Client ${client.id} disconnected`);
   }
 }

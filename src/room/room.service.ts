@@ -24,4 +24,30 @@ export class RoomService {
   async getRooms() {
     return await this.roomRepository.find();
   }
+
+  async addMemberToRoom(roomDto: { roomId: number; userId: number }) {
+    const room = await this.roomRepository.findOneBy({ id: roomDto.roomId });
+    room.members.push({ userId: roomDto.userId, side: 'top' });
+    return await this.roomRepository.save(room);
+  }
+
+  async notEmptyRoom() {
+    const { members } = await this.roomRepository
+      .createQueryBuilder('rooms')
+      .select()
+      .andWhere('members ::jsonb @> :members', {
+        members: JSON.stringify([
+          {
+            side: 'top',
+          },
+        ]),
+      })
+      .andWhere('jsonb_array_length("rooms".members) < 12')
+      .getOne();
+
+    const roomLength = members.length;
+    const girlCount = members.filter((member) => member.side == 'top').length;
+    const manCount = members.filter((member) => member.side == 'bottom').length;
+    return { roomLength, girlCount, manCount };
+  }
 }
