@@ -3,7 +3,6 @@ import { Socket } from 'socket.io';
 import { UserService } from 'src/user/user.service';
 import { WsException } from '@nestjs/websockets';
 import { verify } from 'jsonwebtoken';
-import { JwtPayloadInterface } from 'src/interface/jwtPayload.interface';
 
 @Injectable()
 export class WsGuard implements CanActivate {
@@ -19,12 +18,8 @@ export class WsGuard implements CanActivate {
     }
 
     try {
-      const { id } = verify(
-        bearerToken,
-        process.env.JWT_SECRET,
-      ) as JwtPayloadInterface;
-      const user = await this.userService.getUserbyId(id);
-
+      const decode = verify(bearerToken, process.env.JWT_SECRET);
+      const user = await this.userService.getUserbyId(decode.toString());
       context.switchToHttp().getRequest().user = user;
 
       return !!user;

@@ -5,15 +5,15 @@ import {
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { WsGuard } from 'src/user/ws.guard';
 import { UseGuards } from '@nestjs/common';
-import { User } from 'src/user/user.entity';
 import { currentUser } from 'src/user/user.decorator';
+import { User } from 'src/user/user.entity';
+import { Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly roomService: RoomService) {}
 
   handleConnection(client: Socket) {
@@ -30,12 +30,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @currentUser() user: User,
     @ConnectedSocket() client: Socket,
   ) {
-    const room = await this.roomService.createRoom({
-      userId: user.id,
-      gender: user.sex,
-    });
-    console.log(`${user.firstName} joined to room: ${room.id}`);
+    const rooms = await this.roomService.getRooms();
+    if (!rooms.length) {
+      const room = await this.roomService.createRoom(user);
+      console.log(`${user.firstName} joined to room: ${room.id}`);
+      client.join(room.id.toString());
+      return { event: 'user_joined', data: room };
+    }
+    const room = await this.roomService.joinToRandom(user);
     client.join(room.id.toString());
+    console.log(`${user.firstName} joined to room: ${room.id}`);
+    return { event: 'user_joined', data: room };
   }
 
   @SubscribeMessage('leave')

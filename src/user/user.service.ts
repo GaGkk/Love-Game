@@ -35,6 +35,6 @@ export class UserService {
   }
 
   async getUserbyId(socialId: string) {
-    return this.userRepository.findOneBy({ socialId });
+    return await this.userRepository.findOneBy({ socialId });
   }
 }

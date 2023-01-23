@@ -15,6 +15,9 @@ export class User {
   avatar: string;
 
   @Column({ nullable: true })
+  cover: string;
+
+  @Column({ nullable: true })
   age: number;
 
   @Column({ nullable: true })
@@ -28,7 +31,4 @@ export class User {
 
   @Column()
   socialId: string;
-
-  @Column({ nullable: true })
-  activeRoomId: number;
 }

@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import db from './orm.config';
 import { UserModule } from './user/user.module';
-import { GameGateway } from './room/game.gateway';
+import { RoomGateway } from './room/room.gateway';
 import { ConfigModule } from '@nestjs/config';
 import { RoomModule } from './room/room.module';
 import { AuthMiddleWare } from './user/middlewares/auth.middleware';
@@ -15,7 +15,7 @@ import { AuthMiddleWare } from './user/middlewares/auth.middleware';
     RoomModule,
   ],
   controllers: [],
-  providers: [GameGateway],
+  providers: [RoomGateway],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
