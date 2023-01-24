@@ -31,4 +31,7 @@ export class User {
 
   @Column()
   socialId: string;
+
+  @Column({ nullable: true })
+  activeRoomId: number;
 }

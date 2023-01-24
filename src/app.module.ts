@@ -6,13 +6,18 @@ import { RoomGateway } from './room/room.gateway';
 import { ConfigModule } from '@nestjs/config';
 import { RoomModule } from './room/room.module';
 import { AuthMiddleWare } from './user/middlewares/auth.middleware';
+import { QuizzModule } from './quizz/quizz.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({ rootPath: join(__dirname, '..', 'uploads') }),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     TypeOrmModule.forRoot(db.options),
     UserModule,
     RoomModule,
+    QuizzModule,
   ],
   controllers: [],
   providers: [RoomGateway],

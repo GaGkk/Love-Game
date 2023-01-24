@@ -4,24 +4,29 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './room.service';
 import { WsGuard } from 'src/user/ws.guard';
 import { UseGuards } from '@nestjs/common';
 import { currentUser } from 'src/user/user.decorator';
 import { User } from 'src/user/user.entity';
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly roomService: RoomService) {}
+  @WebSocketServer()
+  server: Server;
 
   handleConnection(client: Socket) {
     console.log(`Client ${client.id} connected`);
   }
 
-  handleDisconnect(client: Socket) {
-    console.log(`Client ${client.id} disconnected`);
+  async handleDisconnect(client: Socket) {
+    const room = await this.roomService.removeMember(client);
+    client.leave(room.id.toString());
+    console.log(`Client ${client.id} disconnected from ${room.id} room`);
   }
 
   @UseGuards(WsGuard)
@@ -40,20 +45,22 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = await this.roomService.joinToRandom(user);
     client.join(room.id.toString());
     console.log(`${user.firstName} joined to room: ${room.id}`);
-    return { event: 'user_joined', data: room };
+    client.emit('user_joined', room);
   }
 
-  @SubscribeMessage('leave')
-  handleLeave(client: Socket, roomId: number) {
-    console.log(`Client ${client.id} leaved room: ${roomId}`);
-    client.leave(roomId.toString());
-    return roomId;
-  }
+  // @SubscribeMessage('send_message')
+  // async listenForMessages(
+  //   @currentUser() user: User,
+  //   @MessageBody() content: string,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   const message = await this.chatService.saveMessage(content, user);
+  //   this.server.sockets.emit('receive_message', message);
+  // }
 
-  @SubscribeMessage('message')
-  async handleMessage(client: Socket, content: string, roomId: number) {
-    console.log(
-      `Client ${client.id} sended message: ${content} to room: ${roomId}`,
-    );
-  }
+  // @SubscribeMessage('request_all_messages')
+  // async requestAllMessages(@ConnectedSocket() client: Socket) {
+  //   const messages = await this.chatService.getAllMessages();
+  //   client.emit('send_all_messages', messages);
+  // }
 }

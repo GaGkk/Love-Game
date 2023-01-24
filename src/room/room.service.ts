@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { WsException } from '@nestjs/websockets';
+import { verify } from 'jsonwebtoken';
+import { Socket } from 'socket.io';
 import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
 import { Room } from './room.entity';
@@ -8,17 +11,52 @@ import { Room } from './room.entity';
 export class RoomService {
   constructor(
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
   private async addMember(user: User, room: Room) {
     if (user.sex === 1) {
       room.members.push({ user, side: 'top' });
       room.topCount++;
-      return await this.roomRepository.save(room);
+      const newRoom = await this.roomRepository.save(room);
+      user.activeRoomId = newRoom.id;
+      await this.userRepository.save(user);
+      return newRoom;
     }
     room.members.push({ user, side: 'bottom' });
     room.bottomCount++;
-    return await this.roomRepository.save(room);
+    const newRoom = await this.roomRepository.save(room);
+    user.activeRoomId = newRoom.id;
+    await this.userRepository.save(user);
+    return newRoom;
+  }
+
+  async removeMember(client: Socket) {
+    const bearerToken = client.handshake.headers.authorization.split(' ')[1];
+    if (!bearerToken) {
+      throw new WsException('Token is required');
+    }
+    const decode = verify(bearerToken, process.env.JWT_SECRET);
+    const user = await this.userRepository.findOne({
+      where: { socialId: decode.toString() },
+    });
+    const room = await this.roomRepository.findOne({
+      where: { id: user.activeRoomId },
+    });
+    const index = room.members.findIndex((leave) => leave.user.id === user.id);
+    if (index >= 0) {
+      room.members.splice(index, 1);
+      if (user.sex === 1) {
+        room.topCount--;
+        user.activeRoomId = null;
+        await this.userRepository.save(user);
+        return await this.roomRepository.save(room);
+      }
+      room.bottomCount--;
+      user.activeRoomId = null;
+      await this.userRepository.save(user);
+      return await this.roomRepository.save(room);
+    }
   }
 
   async getRooms() {
@@ -57,7 +95,9 @@ export class RoomService {
         return this.createRoom(user);
       }
       room.members.push({ user, side: 'top' });
-      room.topCount = room.topCount + 1;
+      room.topCount++;
+      user.activeRoomId = room.id;
+      await this.userRepository.save(user);
       return await this.roomRepository.save(room);
     }
     const room = await this.roomForMans();
@@ -65,7 +105,9 @@ export class RoomService {
       return this.createRoom(user);
     }
     room.members.push({ user, side: 'bottom' });
-    room.bottomCount = room.bottomCount + 1;
+    room.bottomCount++;
+    user.activeRoomId = room.id;
+    await this.userRepository.save(user);
     return await this.roomRepository.save(room);
   }
 
