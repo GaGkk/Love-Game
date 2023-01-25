@@ -12,8 +12,12 @@ export class QuizzService {
   ) {}
 
   public async getAll() {
-    const [questions, count] = await this.quizzRepository.findAndCount();
-    return { questions, count };
+    return await this.quizzRepository.find();
+  }
+
+  public async getRandomOne() {
+    const favorites = await this.getAll();
+    return favorites[Math.floor(Math.random() * favorites.length)];
   }
 
   public async addQuestion(quizz: QuizzDto) {
@@ -37,7 +41,9 @@ export class QuizzService {
     if (!question) {
       throw new NotFoundException('Question Not Found');
     }
-    question.pictures = pictures.map((pic) => `pictures/${pic.filename}`);
+    question.pictures = pictures.map(
+      (pic) => `${process.env.SERVER_URL}/pictures/${pic.filename}`,
+    );
     return await this.quizzRepository.save(question);
   }
 }

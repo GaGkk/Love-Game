@@ -31,7 +31,7 @@ export class RoomService {
     return newRoom;
   }
 
-  async removeMember(client: Socket) {
+  async getUserFromSocket(client: Socket) {
     const bearerToken = client.handshake.headers.authorization.split(' ')[1];
     if (!bearerToken) {
       throw new WsException('Token is required');
@@ -40,6 +40,11 @@ export class RoomService {
     const user = await this.userRepository.findOne({
       where: { socialId: decode.toString() },
     });
+    return user;
+  }
+
+  async removeMember(client: Socket) {
+    const user = await this.getUserFromSocket(client);
     const room = await this.roomRepository.findOne({
       where: { id: user.activeRoomId },
     });
@@ -63,10 +68,14 @@ export class RoomService {
     return await this.roomRepository.find();
   }
 
+  async getActiveRoom(id: number) {
+    return this.roomRepository.findOneBy({ id });
+  }
+
   async roomForGirls() {
     const query = this.roomRepository.createQueryBuilder('rooms');
     const room = await query
-      .andWhere('room.topCount < :max', { max: 6 })
+      .andWhere('rooms.topCount < :max', { max: 6 })
       .getOne();
     return room;
   }
@@ -94,6 +103,12 @@ export class RoomService {
       if (room === null) {
         return this.createRoom(user);
       }
+      const isMember = room.members.find(
+        (member) => member.user.id === user.id,
+      );
+      if (isMember) {
+        return room;
+      }
       room.members.push({ user, side: 'top' });
       room.topCount++;
       user.activeRoomId = room.id;
@@ -103,6 +118,10 @@ export class RoomService {
     const room = await this.roomForMans();
     if (room === null) {
       return this.createRoom(user);
+    }
+    const isMember = room.members.find((member) => member.user.id === user.id);
+    if (isMember) {
+      return room;
     }
     room.members.push({ user, side: 'bottom' });
     room.bottomCount++;

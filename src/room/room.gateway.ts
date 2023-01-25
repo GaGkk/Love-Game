@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
@@ -9,15 +10,20 @@ import {
 import { RoomService } from './room.service';
 import { WsGuard } from 'src/user/ws.guard';
 import { UseGuards } from '@nestjs/common';
-import { currentUser } from 'src/user/user.decorator';
-import { User } from 'src/user/user.entity';
 import { Socket, Server } from 'socket.io';
+import { QuizzService } from 'src/quizz/quizz.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly roomService: RoomService) {}
+  constructor(
+    private readonly roomService: RoomService,
+    private readonly quizzService: QuizzService,
+  ) {}
+
   @WebSocketServer()
   server: Server;
+
+  private answers = [];
 
   handleConnection(client: Socket) {
     console.log(`Client ${client.id} connected`);
@@ -25,42 +31,49 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleDisconnect(client: Socket) {
     const room = await this.roomService.removeMember(client);
-    client.leave(room.id.toString());
+    client.leave(room?.id.toString());
     console.log(`Client ${client.id} disconnected from ${room.id} room`);
   }
 
   @UseGuards(WsGuard)
   @SubscribeMessage('join')
-  async handleJoin(
-    @currentUser() user: User,
-    @ConnectedSocket() client: Socket,
-  ) {
+  async handleJoin(@ConnectedSocket() client: Socket) {
+    const user = await this.roomService.getUserFromSocket(client);
     const rooms = await this.roomService.getRooms();
+
     if (!rooms.length) {
       const room = await this.roomService.createRoom(user);
-      console.log(`${user.firstName} joined to room: ${room.id}`);
       client.join(room.id.toString());
-      return { event: 'user_joined', data: room };
+      console.log(`${user.firstName} in room: ${room.id}`);
+      client.emit('user_joined', room);
+      this.handleStart(client);
+      return;
     }
+    //this.handleStart(client);
     const room = await this.roomService.joinToRandom(user);
-    client.join(room.id.toString());
-    console.log(`${user.firstName} joined to room: ${room.id}`);
+    client.join(room?.id.toString());
+    console.log(`${user.firstName} in room: ${room.id}`);
     client.emit('user_joined', room);
   }
 
-  // @SubscribeMessage('send_message')
-  // async listenForMessages(
-  //   @currentUser() user: User,
-  //   @MessageBody() content: string,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   const message = await this.chatService.saveMessage(content, user);
-  //   this.server.sockets.emit('receive_message', message);
-  // }
+  async handleStart(@ConnectedSocket() client: Socket) {
+    const user = await this.roomService.getUserFromSocket(client);
+    const room = await this.roomService.getActiveRoom(user.activeRoomId);
+    const quizz = await this.quizzService.getRandomOne();
+    if (room.bottomCount > 0 && room.topCount > 0) {
+      this.server.sockets.emit('receive_answers', this.answers);
+      this.answers = [];
+      client.emit('get_quizz', { type: 1, game: quizz });
+    } else {
+      client.emit('waiting', 'No much members!');
+    }
+    setTimeout(() => {
+      this.handleStart(client);
+    }, 3000);
+  }
 
-  // @SubscribeMessage('request_all_messages')
-  // async requestAllMessages(@ConnectedSocket() client: Socket) {
-  //   const messages = await this.chatService.getAllMessages();
-  //   client.emit('send_all_messages', messages);
-  // }
+  @SubscribeMessage('send_answer')
+  async listenForMessages(@MessageBody() content: string) {
+    this.answers.push(content);
+  }
 }
