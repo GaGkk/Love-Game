@@ -37,12 +37,17 @@ export class QuizzService {
     id: number,
     pictures: Array<Express.Multer.File>,
   ) {
+    let url: string;
+    process.env.NODE_ENV == 'dev'
+      ? (url = process.env.LOCAL_URL)
+      : (url = process.env.PROD_URL);
+
     const question = await this.quizzRepository.findOneBy({ id });
     if (!question) {
       throw new NotFoundException('Question Not Found');
     }
     question.pictures = pictures.map(
-      (pic) => `${process.env.SERVER_URL}/pictures/${pic.filename}`,
+      (pic) => `${url}/pictures/${pic.filename}`,
     );
     return await this.quizzRepository.save(question);
   }

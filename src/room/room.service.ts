@@ -88,7 +88,7 @@ export class RoomService {
     return room;
   }
 
-  async createRoom(user: User) {
+  async createRoomAndJoin(user: User) {
     const room = new Room();
     room.members = [];
     room.messages = [];
@@ -101,7 +101,7 @@ export class RoomService {
     if (user.sex === 1) {
       const room = await this.roomForGirls();
       if (room === null) {
-        return this.createRoom(user);
+        return this.createRoomAndJoin(user);
       }
       const isMember = room.members.find(
         (member) => member.user.id === user.id,
@@ -117,7 +117,7 @@ export class RoomService {
     }
     const room = await this.roomForMans();
     if (room === null) {
-      return this.createRoom(user);
+      return this.createRoomAndJoin(user);
     }
     const isMember = room.members.find((member) => member.user.id === user.id);
     if (isMember) {

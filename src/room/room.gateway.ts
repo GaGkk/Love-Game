@@ -8,8 +8,6 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './room.service';
-import { WsGuard } from 'src/user/ws.guard';
-import { UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { QuizzService } from 'src/quizz/quizz.service';
 
@@ -22,54 +20,55 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer()
   server: Server;
-
   private answers = [];
+  private games = ['favorites'];
 
-  handleConnection(client: Socket) {
-    console.log(`Client ${client.id} connected`);
-  }
-
-  async handleDisconnect(client: Socket) {
-    const room = await this.roomService.removeMember(client);
-    client.leave(room?.id.toString());
-    console.log(`Client ${client.id} disconnected from ${room.id} room`);
-  }
-
-  @UseGuards(WsGuard)
-  @SubscribeMessage('join')
-  async handleJoin(@ConnectedSocket() client: Socket) {
+  @WebSocketServer()
+  async handleConnection(@ConnectedSocket() client: Socket) {
     const user = await this.roomService.getUserFromSocket(client);
     const rooms = await this.roomService.getRooms();
-
     if (!rooms.length) {
-      const room = await this.roomService.createRoom(user);
+      const room = await this.roomService.createRoomAndJoin(user);
       client.join(room.id.toString());
       console.log(`${user.firstName} in room: ${room.id}`);
       client.emit('user_joined', room);
       this.handleStart(client);
       return;
     }
-    //this.handleStart(client);
     const room = await this.roomService.joinToRandom(user);
     client.join(room?.id.toString());
     console.log(`${user.firstName} in room: ${room.id}`);
     client.emit('user_joined', room);
   }
 
+  async handleDisconnect(@ConnectedSocket() client: Socket) {
+    const user = await this.roomService.getUserFromSocket(client);
+    const room = await this.roomService.removeMember(client);
+    client.leave(room?.id.toString());
+    console.log(`${user.firstName} disconnected`);
+  }
+
   async handleStart(@ConnectedSocket() client: Socket) {
     const user = await this.roomService.getUserFromSocket(client);
     const room = await this.roomService.getActiveRoom(user.activeRoomId);
-    const quizz = await this.quizzService.getRandomOne();
+    const game = this.games[Math.floor(Math.random() * this.games.length)];
     if (room.bottomCount > 0 && room.topCount > 0) {
-      this.server.sockets.emit('receive_answers', this.answers);
-      this.answers = [];
-      client.emit('get_quizz', { type: 1, game: quizz });
+      if (game == 'favorites') {
+        const quizz = await this.quizzService.getRandomOne();
+        client.emit('get_game', { type: this.games[game], game: quizz });
+      }
+      setTimeout(() => {
+        this.server
+          .in(room.id.toString())
+          .emit('receive_answers', this.answers);
+        this.answers = [];
+        setTimeout(() => {
+          this.handleStart(client);
+        }, 5000);
+      }, 10000);
     } else {
       client.emit('waiting', 'No much members!');
     }
-    setTimeout(() => {
-      this.handleStart(client);
-    }, 3000);
   }
 
   @SubscribeMessage('send_answer')
