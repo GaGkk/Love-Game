@@ -22,6 +22,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
   private answers = [];
   private games = ['favorites'];
+  private timerId: any;
 
   @WebSocketServer()
   async handleConnection(@ConnectedSocket() client: Socket) {
@@ -32,12 +33,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(room.id.toString());
       console.log(`${user.firstName} in room: ${room.id}`);
       client.emit('user_joined', room);
-      this.handleStart(client);
       return;
     }
     const room = await this.roomService.joinToRandom(user);
     if (room.bottomCount === 1 && room.topCount === 1) {
       this.handleStart(client);
+    } else {
+      clearTimeout(this.timerId);
     }
     client.join(room?.id.toString());
     console.log(`${user.firstName} in room: ${room.id}`);
@@ -47,31 +49,31 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(@ConnectedSocket() client: Socket) {
     const user = await this.roomService.getUserFromSocket(client);
     const room = await this.roomService.removeMember(client);
+    if (room.bottomCount < 1 || room.topCount < 1) {
+      clearTimeout(this.timerId);
+    }
     client.leave(room?.id.toString());
     console.log(`${user.firstName} disconnected`);
   }
 
   async handleStart(@ConnectedSocket() client: Socket) {
-    const user = await this.roomService.getUserFromSocket(client);
-    const room = await this.roomService.getActiveRoom(user.activeRoomId);
-    const game = this.games[Math.floor(Math.random() * this.games.length)];
-    if (room.bottomCount > 0 && room.topCount > 0) {
-      if (game == 'favorites') {
-        const quizz = await this.quizzService.getRandomOne();
-        client.emit('get_game', { type: this.games[game], game: quizz });
-      }
+    const game = Math.floor(Math.random() * this.games.length);
+    if (game == 0) {
+      const quizz = await this.quizzService.getRandomOne();
+      this.server.sockets.emit('get_game', {
+        type: game,
+        game: quizz,
+      });
+    }
+    this.timerId = setTimeout(() => {
+      this.server.sockets.emit('receive_answers', this.answers);
       setTimeout(() => {
-        this.server
-          .in(room.id.toString())
-          .emit('receive_answers', this.answers);
         this.answers = [];
         setTimeout(() => {
           this.handleStart(client);
-        }, 5000);
-      }, 10000);
-    } else {
-      client.emit('waiting', 'No much members!');
-    }
+        }, 2000);
+      }, 5000);
+    }, 10000);
   }
 
   @SubscribeMessage('send_answer')

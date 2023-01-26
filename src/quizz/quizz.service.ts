@@ -41,9 +41,7 @@ export class QuizzService {
     if (!question) {
       throw new NotFoundException('Question Not Found');
     }
-    question.pictures = pictures.map(
-      (pic) => `${process.env.PROD_URL}/pictures/${pic.filename}`,
-    );
+    question.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
     return await this.quizzRepository.save(question);
   }
 }
