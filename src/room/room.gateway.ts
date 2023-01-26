@@ -36,6 +36,9 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     const room = await this.roomService.joinToRandom(user);
+    if (room.bottomCount === 1 && room.topCount === 1) {
+      this.handleStart();
+    }
     client.join(room?.id.toString());
     console.log(`${user.firstName} in room: ${room.id}`);
     client.emit('user_joined', room);
