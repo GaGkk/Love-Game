@@ -43,7 +43,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     client.join(room?.id.toString());
     console.log(`${user.firstName} in room: ${room.id}`);
-    client.emit('user_joined', room);
+    this.server.sockets.emit('user_joined', room);
   }
 
   async handleDisconnect(@ConnectedSocket() client: Socket) {
@@ -53,7 +53,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       clearTimeout(this.timerId);
     }
     client.leave(room?.id.toString());
-    client.emit('user_leaved', room);
+    this.server.sockets.emit('user_leaved', room);
     console.log(`${user.firstName} disconnected`);
   }
 
