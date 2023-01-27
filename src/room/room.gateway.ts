@@ -33,14 +33,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(room.id.toString());
       console.log(`${user.firstName} in room: ${room.id}`);
       client.emit('user_joined', room);
+      this.handleStart(client);
       return;
     }
     const room = await this.roomService.joinToRandom(user);
-    if (room.bottomCount === 1 && room.topCount === 1) {
-      this.handleStart(client);
-    } else {
-      clearTimeout(this.timerId);
-    }
+    // if (room.bottomCount === 1 && room.topCount === 1) {
+    //   this.handleStart(client);
+    // } else {
+    //   clearTimeout(this.timerId);
+    // }
     client.join(room?.id.toString());
     console.log(`${user.firstName} in room: ${room.id}`);
     this.server.sockets.emit('user_joined', room);
