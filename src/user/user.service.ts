@@ -28,8 +28,10 @@ export class UserService {
   async updateUser(userDto: UserDto, id: number) {
     const user = await this.userRepository.findOneBy({ id });
     if (user) {
+      const jwt = sign(user.socialId, process.env.JWT_SECRET);
       Object.assign(user, userDto);
-      return this.userRepository.save(user);
+      const updatedUser = await this.userRepository.save(user);
+      return { token: jwt, user: updatedUser };
     }
     throw new NotFoundException('User not Found');
   }

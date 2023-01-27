@@ -53,6 +53,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       clearTimeout(this.timerId);
     }
     client.leave(room?.id.toString());
+    client.emit('user_leaved', room);
     console.log(`${user.firstName} disconnected`);
   }
 

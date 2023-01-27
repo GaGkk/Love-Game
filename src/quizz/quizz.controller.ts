@@ -24,17 +24,22 @@ export class QuizzController {
   }
 
   @Post()
-  public async addQuestion(@Body() quizz: QuizzDto) {
-    return await this.quizzService.addQuestion(quizz);
+  @UseInterceptors(FilesInterceptor('pictures', 3, fileOptions))
+  public async addQuestion(
+    @Body() quizz: QuizzDto,
+    @UploadedFiles() pictures: Array<Express.Multer.File>,
+  ) {
+    return await this.quizzService.addQuestion(quizz, pictures);
   }
 
   @Put('/:id')
   @UseInterceptors(FilesInterceptor('pictures', 3, fileOptions))
-  public async addAnswers(
+  public async editQuestion(
     @Param('id') id: number,
+    @Body() quizz: QuizzDto,
     @UploadedFiles() pictures: Array<Express.Multer.File>,
   ) {
-    return await this.quizzService.addQuestionAnswers(id, pictures);
+    return await this.quizzService.editQuestion(id, quizz, pictures);
   }
 
   @Delete('/:id')

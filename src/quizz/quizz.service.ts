@@ -20,8 +20,12 @@ export class QuizzService {
     return favorites[Math.floor(Math.random() * favorites.length)];
   }
 
-  public async addQuestion(quizz: QuizzDto) {
+  public async addQuestion(
+    quizz: QuizzDto,
+    pictures: Array<Express.Multer.File>,
+  ) {
     const newQuizz = this.quizzRepository.create(quizz);
+    newQuizz.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
     return await this.quizzRepository.save(newQuizz);
   }
 
@@ -33,15 +37,17 @@ export class QuizzService {
     return await this.quizzRepository.delete(id);
   }
 
-  public async addQuestionAnswers(
+  public async editQuestion(
     id: number,
+    quizzDto: QuizzDto,
     pictures: Array<Express.Multer.File>,
   ) {
-    const question = await this.quizzRepository.findOneBy({ id });
-    if (!question) {
+    const quizz = await this.quizzRepository.findOneBy({ id });
+    if (!quizz) {
       throw new NotFoundException('Question Not Found');
     }
-    question.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
-    return await this.quizzRepository.save(question);
+    quizz.question = quizzDto.question;
+    quizz.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
+    return await this.quizzRepository.save(quizz);
   }
 }
