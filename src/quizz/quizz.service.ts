@@ -42,12 +42,18 @@ export class QuizzService {
     quizzDto: QuizzDto,
     pictures: Array<Express.Multer.File>,
   ) {
+    let paths: string[];
     const quizz = await this.quizzRepository.findOneBy({ id });
     if (!quizz) {
       throw new NotFoundException('Question Not Found');
     }
-    quizz.question = quizzDto.question;
-    quizz.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
+    if (pictures.length > 0) {
+      paths = pictures.map((pic) => `/pictures/${pic.filename}`);
+    }
+    Object.assign(quizz, {
+      question: quizzDto.question ? quizzDto.question : quizz.question,
+      pictures: paths ? paths : quizz.pictures,
+    });
     return await this.quizzRepository.save(quizz);
   }
 }

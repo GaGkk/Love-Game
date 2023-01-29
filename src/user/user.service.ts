@@ -36,7 +36,19 @@ export class UserService {
     throw new NotFoundException('User not Found');
   }
 
-  async getUserbyId(socialId: string) {
+  async getUserbySocialId(socialId: string) {
     return await this.userRepository.findOneBy({ socialId });
+  }
+
+  async getUsers() {
+    return await this.userRepository.find();
+  }
+
+  async deleteUser(id: number) {
+    const user = this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException('User not Found!');
+    }
+    return await this.userRepository.delete(id);
   }
 }

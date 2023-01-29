@@ -1,9 +1,9 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { ExpressReqInterface } from 'src/interface/expressreq.interface';
+import { ReqInterface } from 'src/interface/req.interface';
 
 export const currentUser = createParamDecorator(
   (data: any, ctx: ExecutionContext) => {
-    const req = ctx.switchToHttp().getRequest<ExpressReqInterface>();
+    const req = ctx.switchToHttp().getRequest<ReqInterface>();
     if (!req.user) {
       return null;
     }
