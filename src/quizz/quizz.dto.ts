@@ -6,4 +6,9 @@ export class QuizzDto {
 
   @IsNotEmpty()
   readonly pictures: string[];
+
+  readonly visible: boolean;
+
+  @IsNotEmpty()
+  readonly category: number;
 }

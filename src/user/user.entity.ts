@@ -30,7 +30,7 @@ export class User {
   };
 
   @Column()
-  socialId: string;
+  socialId: number;
 
   @Column({ nullable: true })
   activeRoomId: number | null;

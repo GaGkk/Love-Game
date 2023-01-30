@@ -12,6 +12,6 @@ export class UserDto {
   };
 
   @IsNotEmpty()
-  readonly socialId: string;
+  readonly socialId: number;
   readonly activeRoomId: number;
 }

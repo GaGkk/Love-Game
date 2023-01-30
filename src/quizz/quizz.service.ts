@@ -12,7 +12,7 @@ export class QuizzService {
   ) {}
 
   public async getAll() {
-    return await this.quizzRepository.find();
+    return await this.quizzRepository.find({ where: { visible: true } });
   }
 
   public async getRandomOne() {
@@ -53,6 +53,8 @@ export class QuizzService {
     Object.assign(quizz, {
       question: quizzDto.question ? quizzDto.question : quizz.question,
       pictures: paths ? paths : quizz.pictures,
+      visible: quizzDto.visible ? quizzDto.visible : quizz.visible,
+      category: quizzDto.category ? quizzDto.category : quizz.category,
     });
     return await this.quizzRepository.save(quizz);
   }

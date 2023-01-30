@@ -26,6 +26,9 @@ export class RoomGateway
 
   private answers = [];
   private gameTimer: any;
+  private answersTimer: any;
+  private restartTimer: any;
+  private isStarted: boolean;
 
   @WebSocketServer()
   server: Server;
@@ -41,9 +44,7 @@ export class RoomGateway
       const token = bearerToken.split(' ')[1];
       try {
         const decode = verify(token, process.env.JWT_SECRET);
-        const user = await this.userService.getUserbySocialId(
-          decode.toString(),
-        );
+        const user = await this.userService.getUserbySocialId(+decode);
         socket.user = user;
         next();
       } catch {
@@ -71,9 +72,9 @@ export class RoomGateway
     socket.join(room.id.toString());
     console.log(`${socket.user.firstName} in room: ${room.id}`);
     this.server.sockets.to(room.id.toString()).emit('user_joined', room);
-    /////////////////////////////////////////////////////////////////////
-    if (room.bottomCount === 1 || room.topCount === 1) {
-      return this.handleStart(socket);
+    if (room.bottomCount >= 1 && room.topCount >= 1 && !this.isStarted) {
+      this.handleStart(socket);
+      this.isStarted = true;
     }
   }
 
@@ -82,8 +83,11 @@ export class RoomGateway
   async handleLeave(socket: SocketInterface) {
     const room = await this.roomService.removeMember(socket.user);
     if (room) {
-      if (room.bottomCount === 0 && room.topCount === 0) {
+      if (room.members.length < 2) {
+        this.isStarted = false;
         clearTimeout(this.gameTimer);
+        clearTimeout(this.answersTimer);
+        clearTimeout(this.restartTimer);
       }
       socket.leave(room.id.toString());
       console.log(`${socket.user.firstName} leave ${room.id}`);
@@ -95,16 +99,17 @@ export class RoomGateway
   @SubscribeMessage('start_game')
   async handleStart(socket: SocketInterface) {
     const game = await this.roomService.getRandomGame();
+
     this.server.sockets
-      .to(socket.user?.activeRoomId.toString())
+      .to(socket.user.activeRoomId?.toString())
       .emit('get_game', game);
     this.gameTimer = setTimeout(() => {
       this.server.sockets
         .to(socket.user.activeRoomId.toString())
         .emit('receive_answers', this.answers);
-      setTimeout(() => {
+      this.answersTimer = setTimeout(() => {
         this.answers = [];
-        setTimeout(() => {
+        this.restartTimer = setTimeout(() => {
           this.handleStart(socket);
         }, 2000);
       }, 5000);

@@ -13,4 +13,10 @@ export class Quizz {
     nullable: true,
   })
   pictures: string[];
+
+  @Column({ default: true })
+  visible: boolean;
+
+  @Column()
+  category: number;
 }

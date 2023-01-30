@@ -14,9 +14,9 @@ export class UserService {
 
   async getUser(userDto: UserDto) {
     const user = await this.userRepository.findOne({
-      where: { socialId: userDto.socialId },
+      where: { socialId: +userDto.socialId },
     });
-    const jwt = sign(userDto.socialId, process.env.JWT_SECRET);
+    const jwt = sign(userDto.socialId.toString(), process.env.JWT_SECRET);
     if (!user) {
       const newProfile = this.userRepository.create(userDto);
       const user = await this.userRepository.save(newProfile);
@@ -28,7 +28,7 @@ export class UserService {
   async updateUser(userDto: UserDto, id: number) {
     const user = await this.userRepository.findOneBy({ id });
     if (user) {
-      const jwt = sign(user.socialId, process.env.JWT_SECRET);
+      const jwt = sign(user.socialId.toString(), process.env.JWT_SECRET);
       Object.assign(user, userDto);
       const updatedUser = await this.userRepository.save(user);
       return { token: jwt, user: updatedUser };
@@ -36,7 +36,7 @@ export class UserService {
     throw new NotFoundException('User not Found');
   }
 
-  async getUserbySocialId(socialId: string) {
+  async getUserbySocialId(socialId: number) {
     return await this.userRepository.findOneBy({ socialId });
   }
 
