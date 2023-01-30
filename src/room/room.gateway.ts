@@ -25,9 +25,9 @@ export class RoomGateway
   ) {}
 
   private answers = [];
-  private gameTimer: any;
-  private answersTimer: any;
-  private restartTimer: any;
+  private gameTimer: ReturnType<typeof setTimeout>;
+  private answersTimer: ReturnType<typeof setTimeout>;
+  private restartTimer: ReturnType<typeof setTimeout>;
   private isStarted: boolean;
 
   @WebSocketServer()

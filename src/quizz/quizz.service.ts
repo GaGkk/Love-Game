@@ -25,6 +25,8 @@ export class QuizzService {
     pictures: Array<Express.Multer.File>,
   ) {
     const newQuizz = this.quizzRepository.create(quizz);
+    newQuizz.visible = !!+newQuizz.visible;
+    newQuizz.category = +newQuizz.category;
     newQuizz.pictures = pictures.map((pic) => `/pictures/${pic.filename}`);
     return await this.quizzRepository.save(newQuizz);
   }
@@ -53,8 +55,8 @@ export class QuizzService {
     Object.assign(quizz, {
       question: quizzDto.question ? quizzDto.question : quizz.question,
       pictures: paths ? paths : quizz.pictures,
-      visible: quizzDto.visible ? quizzDto.visible : quizz.visible,
-      category: quizzDto.category ? quizzDto.category : quizz.category,
+      visible: quizzDto.visible ? !!+quizzDto.visible : quizz.visible,
+      category: quizzDto.category ? +quizzDto.category : quizz.category,
     });
     return await this.quizzRepository.save(quizz);
   }
