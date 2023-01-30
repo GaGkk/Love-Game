@@ -11,9 +11,9 @@ export class UserController {
     return this.userService.getUsers();
   }
 
-  @Post('/getUser')
-  async get(@Body() userDto: UserDto) {
-    return this.userService.getUser(userDto);
+  @Get('/getUser/:id')
+  async get(@Param('id') socialId: string, userDto: UserDto) {
+    return this.userService.getUser(socialId, userDto);
   }
 
   @Post('/:id')

@@ -1,7 +1,6 @@
 import {
   MessageBody,
   OnGatewayDisconnect,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -12,13 +11,10 @@ import { UseGuards } from '@nestjs/common';
 import { WsGuard } from 'src/user/ws.guard';
 import { SocketInterface } from 'src/interface/socket.interface';
 import { UserService } from 'src/user/user.service';
-import { verify } from 'jsonwebtoken';
 import { OnGatewayConnection } from '@nestjs/websockets/interfaces/hooks';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class RoomGateway
-  implements OnGatewayDisconnect, OnGatewayConnection, OnGatewayInit
-{
+export class RoomGateway implements OnGatewayDisconnect, OnGatewayConnection {
   constructor(
     private readonly roomService: RoomService,
     private readonly userService: UserService,
@@ -33,38 +29,21 @@ export class RoomGateway
   @WebSocketServer()
   server: Server;
 
-  afterInit(server: Server) {
-    server.use(async (socket: SocketInterface, next) => {
-      const bearerToken = socket.handshake.headers.authorization;
-      if (!bearerToken) {
-        socket.user = null;
-        next();
-        return;
-      }
-      const token = bearerToken.split(' ')[1];
-      try {
-        const decode = verify(token, process.env.JWT_SECRET);
-        const user = await this.userService.getUserbySocialId(+decode);
-        socket.user = user;
-        next();
-      } catch {
-        socket.user = null;
-        next();
-      }
-    });
-  }
-
-  handleConnection(socket: SocketInterface) {
+  async handleConnection(socket: SocketInterface) {
+    socket = await this.userService.getUserFromSocket(socket);
     if (!socket.user) {
       socket.disconnect(true);
+      return;
     }
     console.log(`${socket.user.firstName} connected`);
     return this.handleJoin(socket);
   }
 
   handleDisconnect(socket: SocketInterface) {
-    console.log(`${socket.user.firstName} disconnected`);
-    return this.handleLeave(socket);
+    if (socket.user) {
+      console.log(`${socket.user.firstName} disconnected`);
+      return this.handleLeave(socket);
+    }
   }
 
   async handleJoin(socket: SocketInterface) {
@@ -99,7 +78,6 @@ export class RoomGateway
   @SubscribeMessage('start_game')
   async handleStart(socket: SocketInterface) {
     const game = await this.roomService.getRandomGame();
-
     this.server.sockets
       .to(socket.user.activeRoomId?.toString())
       .emit('get_game', game);
