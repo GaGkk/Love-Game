@@ -50,10 +50,10 @@ export class UserService {
   async updateUser(userDto: UserDto, id: number) {
     const user = await this.userRepository.findOneBy({ id });
     if (user) {
-      const jwt = sign(user.socialId.toString(), process.env.JWT_SECRET);
       Object.assign(user, userDto);
-      const updatedUser = await this.userRepository.save(user);
-      return { token: jwt, user: updatedUser };
+      await this.userRepository.save(user);
+      const updatedUser = await this.getUser(user.socialId.toString(), userDto);
+      return { ...updatedUser };
     }
     throw new NotFoundException('User not Found');
   }

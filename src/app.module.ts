@@ -9,6 +9,7 @@ import { AuthMiddleWare } from './user/middlewares/auth.middleware';
 import { QuizzModule } from './quizz/quizz.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { GameService } from './game/game.service';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { join } from 'path';
     QuizzModule,
   ],
   controllers: [],
-  providers: [RoomGateway],
+  providers: [GameService, RoomGateway],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

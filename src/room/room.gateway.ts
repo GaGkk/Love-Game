@@ -12,12 +12,14 @@ import { WsGuard } from 'src/user/ws.guard';
 import { SocketInterface } from 'src/interface/socket.interface';
 import { UserService } from 'src/user/user.service';
 import { OnGatewayConnection } from '@nestjs/websockets/interfaces/hooks';
+import { GameService } from 'src/game/game.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomGateway implements OnGatewayDisconnect, OnGatewayConnection {
   constructor(
     private readonly roomService: RoomService,
     private readonly userService: UserService,
+    private readonly gameService: GameService,
   ) {}
 
   private answers = [];
@@ -77,7 +79,7 @@ export class RoomGateway implements OnGatewayDisconnect, OnGatewayConnection {
   @UseGuards(WsGuard)
   @SubscribeMessage('start_game')
   async handleStart(socket: SocketInterface) {
-    const game = await this.roomService.getRandomGame();
+    const game = await this.gameService.getRandomGame();
     this.server.sockets
       .to(socket.user.activeRoomId?.toString())
       .emit('get_game', game);

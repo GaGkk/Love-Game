@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuizzService } from 'src/quizz/quizz.service';
 import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
 import { Room } from './room.entity';
@@ -10,18 +9,7 @@ export class RoomService {
   constructor(
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly quizzService: QuizzService,
   ) {}
-
-  private games = ['favorites'];
-
-  async getRandomGame() {
-    const type = Math.floor(Math.random() * this.games.length);
-    if (type === 0) {
-      const game = await this.quizzService.getRandomOne();
-      return { type, game };
-    }
-  }
 
   async getRooms() {
     return await this.roomRepository.find();
