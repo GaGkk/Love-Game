@@ -9,6 +9,11 @@ enum ROOMTYPE {
   pages,
 }
 
+enum MemberStatus {
+  InGame,
+  Leave,
+}
+
 @Entity()
 export class Room {
   @PrimaryGeneratedColumn()
