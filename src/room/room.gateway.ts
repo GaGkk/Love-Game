@@ -47,7 +47,7 @@ export class RoomGateway implements OnGatewayDisconnect, OnGatewayConnection {
     console.log(`${socket.user.firstName} in room: ${room.id}`);
     this.server.sockets.to(room.id.toString()).emit('user_joined', room);
     this.game.set(room.id, new Game(this.quizzService));
-    this.game.get(room.id).tryToStart(room, this.server);
+    this.game.get(room.id).tryToStart(room, this.server, socket);
   }
 
   async handleLeave(socket: SocketInterface) {

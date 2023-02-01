@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { SocketInterface } from 'src/interface/socket.interface';
 import { QuizzService } from 'src/quizz/quizz.service';
 import { Room } from 'src/room/room.entity';
 
@@ -12,17 +13,17 @@ export class Game {
 
   constructor(private readonly quizzService: QuizzService) {}
 
-  async tryToStart(room: Room, server: Server) {
+  async tryToStart(room: Room, server: Server, socket: SocketInterface) {
     if (room.bottomCount >= 1 && room.topCount >= 1 && !this.isStarted) {
       this.isStarted = true;
-      this.nextGame(room.id, server);
+      this.nextGame(room.id, server, socket);
     }
     if (room.members.length < 2) {
       this.isStarted = false;
     }
   }
 
-  async nextGame(roomId: number, server: Server) {
+  async nextGame(roomId: number, server: Server, socket: SocketInterface) {
     const type = Math.floor(Math.random() * this.games.length);
     if (type === 0) {
       const game = await this.quizzService.getRandomOne();
@@ -34,11 +35,11 @@ export class Game {
         this.answersTimer = setTimeout(() => {
           this.answers = [];
           this.restartTimer = setTimeout(() => {
-            this.nextGame(roomId, server);
+            this.nextGame(roomId, server, socket);
           }, 2000);
         }, 5000);
       }, 10000);
-      server.sockets.on('send_answer', (data) => {
+      socket.on('send_answer', (data) => {
         this.answers.push(data);
       });
     }
