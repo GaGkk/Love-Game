@@ -1,6 +1,6 @@
 import { IsNotEmpty } from 'class-validator';
 
-export class UserDto {
+export class  UserDto {
   readonly firstName: string;
   readonly lastName: string;
   readonly avatar: string;

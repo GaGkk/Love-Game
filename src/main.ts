@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { readFileSync } from 'fs';
 import { AppModule } from './app.module';
 let httpsOptions: HttpsOptions;
+console.log("------------------------",process.env.ROOM_MAX);
+
 if (process.env.NODE_ENV !== 'dev') {
   httpsOptions = {
     key: readFileSync(process.env.HTTPS_KEY),
@@ -17,4 +19,5 @@ async function bootstrap() {
   });
   await app.listen(3012);
 }
+
 bootstrap();

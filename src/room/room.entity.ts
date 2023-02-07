@@ -9,32 +9,22 @@ enum ROOMTYPE {
   pages,
 }
 
-enum MemberStatus {
+export enum MemberStatus {
   InGame,
   Leave,
 }
 
+interface Member {
+  userId:number,
+  side:string,
+  status:MemberStatus,
+}
 @Entity()
 export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
+  
   @Column('json', { nullable: true })
-  messages: {
-    from: number;
-    message: string;
-    createdAt: Date;
-  }[];
-
-  @Column('json', { nullable: true })
-  members: {
-    side: string;
-    user: User;
-  }[];
-
-  @Column({ default: 0 })
-  topCount: number;
-
-  @Column({ default: 0 })
-  bottomCount: number;
+  members: Member[];
 }

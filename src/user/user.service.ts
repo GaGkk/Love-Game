@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { sign, verify } from 'jsonwebtoken';
+import { sign, verify ,JwtPayload} from 'jsonwebtoken';
 import { UserDto } from './createUser.dto';
 import { SocketInterface } from 'src/interface/socket.interface';
 
@@ -13,6 +13,29 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+
+  async  login(socialId:number,socialType:string) {
+    const user = await this.userRepository.findOne({
+      where: { socialId: socialId },
+    });
+    const jwt = sign({id:socialId}, process.env.JWT_SECRET);
+    if(!user){
+      const newProfile = this.userRepository.create({
+        ...new UserDto(),
+        socialId: +socialId,
+      });
+      const user = await this.userRepository.save(newProfile);
+      return { token: jwt, user };
+    }
+    return { token: jwt, user };
+
+
+   
+  }
+  async getRandomUser(){
+    const user = await this.userRepository.query('SELECT id FROM "users" "motivation" ORDER BY RANDOM() ASC LIMIT 1');
+    return user;
+  }
   async getUser(socialId: string, userDto: UserDto) {
     const user = await this.userRepository.findOne({
       where: { socialId: +socialId },
@@ -31,14 +54,19 @@ export class UserService {
 
   async getUserFromSocket(socket: SocketInterface) {
     const bearerToken = socket.handshake.headers.authorization;
+    console.log(bearerToken);
+    
     if (!bearerToken) {
       socket.user = null;
       return socket;
     }
     const token = bearerToken.split(' ')[1];
     try {
-      const decode = verify(token, process.env.JWT_SECRET);
-      const user = await this.getUserbySocialId(+decode);
+      const decode:any = verify(token, process.env.JWT_SECRET);
+      console.log(decode);
+      
+      const user = await this.getUserbySocialId(decode.id);
+      
       socket.user = user;
       return socket;
     } catch {
